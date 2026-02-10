@@ -4,6 +4,7 @@ import { fetchDocumentationMarkdown } from "@/lib/jina";
 import { analyzeDocumentation } from "@/lib/gemini";
 import { createSupabaseClient } from "@/lib/supabase";
 import { ConfigSchema, type ModelConfig } from "@/lib/configSchema";
+import { analysisResultToModelConfig } from "@/lib/adapters/analysisStorageAdapter";
 
 export const runtime = "edge";
 
@@ -36,9 +37,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const markdown = await fetchDocumentationMarkdown(url);
-    const config = await analyzeDocumentation(markdown);
+    const analysis = await analyzeDocumentation(markdown);
 
-    const parsedConfig = ConfigSchema.safeParse(config);
+    if (!analysis.isDocumentation) {
+      return NextResponse.json(
+        { error: "Документация не обнаружена" },
+        { status: 400 },
+      );
+    }
+
+    const mappedConfig = analysisResultToModelConfig(analysis);
+
+    const parsedConfig = ConfigSchema.safeParse(mappedConfig);
 
     if (!parsedConfig.success) {
       return NextResponse.json(
@@ -48,13 +58,6 @@ export async function POST(req: NextRequest) {
     }
 
     const validConfig: ModelConfig = parsedConfig.data;
-
-    if (!validConfig.is_documentation) {
-      return NextResponse.json(
-        { error: "Документация не обнаружена" },
-        { status: 400 },
-      );
-    }
 
     const supabase = createSupabaseClient();
 
@@ -66,7 +69,7 @@ export async function POST(req: NextRequest) {
           config: validConfig,
         } as any,
       )
-      .select("id, model_name, config")
+      .select("id, model_name, config, created_at")
       .single();
 
     if (error) {

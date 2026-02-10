@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { createSupabaseClient } from "@/lib/supabase";
 import { ConfigSchema, type ModelConfig } from "@/lib/configSchema";
+import { modelConfigToPromptBuilderInput } from "@/lib/adapters/promptBuilderAdapter";
 
 export const runtime = "edge";
 
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
   }
 
   const config: ModelConfig = parsedConfig.data;
+  const promptConfig = modelConfigToPromptBuilderInput({
+    config,
+    modelIdentifier: row.model_name,
+  });
 
   try {
     const model = google("gemini-2.5-flash");
@@ -83,7 +88,7 @@ export async function POST(req: NextRequest) {
         "- Не добавляй вокруг промпта никаких служебных слов.",
         "",
         "Конфиг модели (JSON):",
-        JSON.stringify(config),
+        JSON.stringify(promptConfig),
         "",
         "Значения полей, введённые пользователем на русском (JSON):",
         JSON.stringify(fields),

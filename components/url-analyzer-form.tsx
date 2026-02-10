@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function UrlAnalyzerForm() {
+type UrlAnalyzerFormProps = {
+  onModelCreated?: (model: {
+    id: string;
+    model_name: string;
+    created_at?: string;
+  }) => void;
+};
+
+export function UrlAnalyzerForm({ onModelCreated }: UrlAnalyzerFormProps) {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +48,13 @@ export function UrlAnalyzerForm() {
 
       if (data.model?.model_name) {
         setMessage(`Модель "${data.model.model_name}" сохранена в базе.`);
+        if (data.model.id) {
+          onModelCreated?.({
+            id: data.model.id,
+            model_name: data.model.model_name,
+            created_at: data.model.created_at,
+          });
+        }
       } else {
         setMessage("Анализ успешно завершён.");
       }

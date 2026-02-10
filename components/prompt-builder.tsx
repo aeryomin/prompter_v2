@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ModelConfig } from "@/lib/configSchema";
+import type { PromptBuilderInput } from "@/lib/prompt-builder/promptBuilderSchema";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ type PromptBuilderProps = {
 };
 
 export function PromptBuilder({ modelId }: PromptBuilderProps) {
-  const [config, setConfig] = useState<ModelConfig | null>(null);
+  const [config, setConfig] = useState<PromptBuilderInput | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState<string | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
@@ -45,7 +45,7 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
         }
 
         if (!cancelled) {
-          setConfig(data.model.config);
+          setConfig(data.model.promptConfig);
         }
       } catch {
         if (!cancelled) {
@@ -139,10 +139,10 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
       <div className="space-y-2">
         <p className="text-sm text-slate-300">
           Поля модели{" "}
-          <span className="font-medium">{config.model_name}</span>:
+          <span className="font-medium">{config.modelIdentifier}</span>:
         </p>
         <div className="space-y-3">
-          {config.fields.map((field) => {
+          {config.formFields.map((field) => {
             const value = values[field.name] ?? "";
 
             return (
@@ -151,9 +151,9 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
                 className="space-y-1 rounded-md border border-slate-800 bg-slate-900/60 p-3"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Label>{field.name}</Label>
+                  <Label>{field.label}</Label>
                   <span className="text-xs uppercase text-slate-500">
-                    {field.type}
+                    {field.inputType}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
@@ -164,7 +164,7 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
                     </span>
                   )}
                 </p>
-                {field.type === "text" && (
+                {field.inputType === "text" && (
                   <Textarea
                     value={value}
                     onChange={(event) =>
@@ -173,7 +173,7 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
                     placeholder="Опишите значение на русском языке"
                   />
                 )}
-                {field.type === "number" && (
+                {field.inputType === "number" && (
                   <Input
                     type="number"
                     value={value}
@@ -183,7 +183,7 @@ export function PromptBuilder({ modelId }: PromptBuilderProps) {
                     placeholder="Числовое значение"
                   />
                 )}
-                {field.type === "select" && (
+                {field.inputType === "select" && (
                   <Input
                     value={value}
                     onChange={(event) =>

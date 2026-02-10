@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 type ModelSelectorProps = {
   value?: string;
   onChange?: (value: string) => void;
+  models: ModelOption[];
+  isLoading?: boolean;
+  errorMessage?: string | null;
 };
 
 type ModelOption = {
@@ -15,47 +17,13 @@ type ModelOption = {
   created_at: string;
 };
 
-export function ModelSelector({ value, onChange }: ModelSelectorProps) {
-  const [models, setModels] = useState<ModelOption[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const res = await fetch("/api/models");
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? "Не удалось загрузить список моделей");
-          return;
-        }
-
-        if (!cancelled) {
-          setModels(data.models ?? []);
-        }
-      } catch {
-        if (!cancelled) {
-          setError("Ошибка сети при загрузке моделей");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export function ModelSelector({
+  value,
+  onChange,
+  models,
+  isLoading,
+  errorMessage,
+}: ModelSelectorProps) {
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     onChange?.(event.target.value || "");
@@ -81,7 +49,7 @@ export function ModelSelector({ value, onChange }: ModelSelectorProps) {
         )}
         value={value ?? ""}
         onChange={handleChange}
-        disabled={isLoading || models.length === 0}
+        disabled={!!isLoading || models.length === 0}
       >
         <option value="">Выберите модель</option>
         {models.map((model) => (
@@ -90,8 +58,8 @@ export function ModelSelector({ value, onChange }: ModelSelectorProps) {
           </option>
         ))}
       </select>
-      {error ? (
-        <p className="text-xs text-red-400">{error}</p>
+      {errorMessage ? (
+        <p className="text-xs text-red-400">{errorMessage}</p>
       ) : (
         <p className="text-xs text-slate-500">
           Список заполняется после анализа документации и сохранения моделей.

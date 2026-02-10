@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseClient } from "@/lib/supabase";
 import { ConfigSchema, type ModelConfig } from "@/lib/configSchema";
+import { modelConfigToPromptBuilderInput } from "@/lib/adapters/promptBuilderAdapter";
 
 export const runtime = "edge";
 
@@ -52,13 +53,17 @@ export async function GET(
   }
 
   const config: ModelConfig = parsedConfig.data;
+  const promptConfig = modelConfigToPromptBuilderInput({
+    config,
+    modelIdentifier: row.model_name,
+  });
 
   return NextResponse.json(
     {
       model: {
         id: row.id,
         model_name: row.model_name,
-        config,
+        promptConfig,
       },
     },
     { status: 200 },
