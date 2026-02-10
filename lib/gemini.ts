@@ -9,9 +9,12 @@ export async function analyzeDocumentation(
     const { object } = await generateObject({
       model: google("gemini-2.5-flash"),
       schema: ConfigSchema,
-      prompt:
+      prompt: [
         "Ты — система, которая анализирует документацию моделей ИИ и возвращает JSON-конфиг по заданной схеме.",
-      input: markdown,
+        "",
+        "Вот полная документация модели в формате Markdown:",
+        markdown,
+      ].join("\n"),
     });
 
     return object;

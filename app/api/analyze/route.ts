@@ -60,10 +60,12 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from("models")
-      .insert({
-        model_name: validConfig.model_name,
-        config: validConfig,
-      })
+      .insert(
+        {
+          model_name: validConfig.model_name,
+          config: validConfig,
+        } as any,
+      )
       .select("id, model_name, config")
       .single();
 

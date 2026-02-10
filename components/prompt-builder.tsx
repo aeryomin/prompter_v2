@@ -1,44 +1,228 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { ModelConfig } from "@/lib/configSchema";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 type PromptBuilderProps = {
-  config?: ModelConfig;
+  modelId?: string;
 };
 
-export function PromptBuilder({ config }: PromptBuilderProps) {
+export function PromptBuilder({ modelId }: PromptBuilderProps) {
+  const [config, setConfig] = useState<ModelConfig | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [prompt, setPrompt] = useState<string | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setConfig(null);
+    setValues({});
+    setPrompt(null);
+    setError(null);
+
+    if (!modelId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadConfig() {
+      setIsLoadingConfig(true);
+      try {
+        const res = await fetch(`/api/models/${modelId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (!cancelled) {
+            setError(data.error ?? "Не удалось загрузить конфигурацию модели");
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setConfig(data.model.config);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Ошибка сети при загрузке конфигурации модели");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingConfig(false);
+        }
+      }
+    }
+
+    loadConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [modelId]);
+
+  const handleFieldChange = (name: string, value: string) => {
+    setValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleGenerate = async () => {
+    if (!modelId || !config) {
+      setError("Сначала выберите модель и дождитесь загрузки конфигурации");
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    setPrompt(null);
+
+    try {
+      const res = await fetch("/api/generate-prompt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          modelId,
+          fields: values,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Не удалось сгенерировать промпт");
+        return;
+      }
+
+      setPrompt(data.prompt);
+    } catch {
+      setError("Ошибка сети при генерации промпта");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (!modelId) {
+    return (
+      <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-400">
+        Сначала выберите модель, чтобы увидеть доступные поля конструктора.
+      </div>
+    );
+  }
+
+  if (isLoadingConfig) {
+    return (
+      <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-400">
+        Загружаем конфигурацию модели...
+      </div>
+    );
+  }
+
   if (!config) {
     return (
       <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-400">
-        Конфиг модели ещё не загружен. После анализа документации и выбора
-        модели здесь появится интерактивный конструктор полей (сцена,
-        освещение, движение камеры и т.д.).
+        Конфигурация модели не загружена. Убедитесь, что модель сохранена через
+        анализ документации.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-slate-300">
-        Поля модели <span className="font-medium">{config.model_name}</span>:
-      </p>
-      <ul className="space-y-2 text-sm text-slate-200">
-        {config.fields.map((field) => (
-          <li
-            key={field.name}
-            className="rounded-md border border-slate-700 bg-slate-900/60 p-2"
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <p className="text-sm text-slate-300">
+          Поля модели{" "}
+          <span className="font-medium">{config.model_name}</span>:
+        </p>
+        <div className="space-y-3">
+          {config.fields.map((field) => {
+            const value = values[field.name] ?? "";
+
+            return (
+              <div
+                key={field.name}
+                className="space-y-1 rounded-md border border-slate-800 bg-slate-900/60 p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <Label>{field.name}</Label>
+                  <span className="text-xs uppercase text-slate-500">
+                    {field.type}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  {field.description}{" "}
+                  {field.example && (
+                    <span className="text-slate-500">
+                      Пример: <span className="italic">{field.example}</span>
+                    </span>
+                  )}
+                </p>
+                {field.type === "text" && (
+                  <Textarea
+                    value={value}
+                    onChange={(event) =>
+                      handleFieldChange(field.name, event.target.value)
+                    }
+                    placeholder="Опишите значение на русском языке"
+                  />
+                )}
+                {field.type === "number" && (
+                  <Input
+                    type="number"
+                    value={value}
+                    onChange={(event) =>
+                      handleFieldChange(field.name, event.target.value)
+                    }
+                    placeholder="Числовое значение"
+                  />
+                )}
+                {field.type === "select" && (
+                  <Input
+                    value={value}
+                    onChange={(event) =>
+                      handleFieldChange(field.name, event.target.value)
+                    }
+                    placeholder="Значение из ограниченного набора (введите на русском)"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Button onClick={handleGenerate} disabled={isGenerating}>
+          {isGenerating ? "Генерируем промпт..." : "Сгенерировать промпт"}
+        </Button>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+      </div>
+
+      {prompt && (
+        <div className="space-y-2">
+          <p className="text-sm text-slate-300">Итоговый промпт:</p>
+          <Textarea
+            readOnly
+            value={prompt}
+            className="font-mono text-xs leading-relaxed"
+          />
+          <Button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(prompt).catch(() => {});
+            }}
           >
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{field.name}</span>
-              <span className="text-xs uppercase text-slate-500">
-                {field.type}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-slate-400">{field.description}</p>
-            <p className="mt-1 text-xs text-slate-500">
-              Пример: <span className="italic">{field.example}</span>
-            </p>
-          </li>
-        ))}
-      </ul>
+            Скопировать промпт
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

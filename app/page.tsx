@@ -1,8 +1,13 @@
+'use client';
+
+import { useState } from "react";
 import { UrlAnalyzerForm } from "@/components/url-analyzer-form";
-import { ModelSelector } from "@/components/model-selector";
-import { PromptBuilder } from "@/components/prompt-builder";
+import { ModelSelector } from "../components/model-selector";
+import { PromptBuilder } from "../components/prompt-builder";
 
 export default function HomePage() {
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
@@ -22,8 +27,11 @@ export default function HomePage() {
             — система подготовит финальный промпт на английском.
           </p>
         </div>
-        <ModelSelector />
-        <PromptBuilder />
+        <ModelSelector
+          value={selectedModelId}
+          onChange={(id) => setSelectedModelId(id)}
+        />
+        <PromptBuilder modelId={selectedModelId || undefined} />
       </section>
     </div>
   );
