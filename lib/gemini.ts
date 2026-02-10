@@ -7,7 +7,7 @@ export async function analyzeDocumentation(
 ): Promise<ModelConfig> {
   try {
     const { object } = await generateObject({
-      model: google("gemini-1.5-flash"),
+      model: google("gemini-2.5-flash"),
       schema: ConfigSchema,
       prompt:
         "Ты — система, которая анализирует документацию моделей ИИ и возвращает JSON-конфиг по заданной схеме.",

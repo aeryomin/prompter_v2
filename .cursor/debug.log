@@ -1,0 +1,4 @@
+{"id":"log_1770724375366_before_jina","timestamp":1770724375366,"location":"app/api/analyze/route.ts:40","message":"Before Jina fetch","data":{"url":"https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-veo-3-1"},"runId":"pre-fix","hypothesisId":"H4"}
+{"id":"log_1770724375946_after_jina","timestamp":1770724375946,"location":"app/api/analyze/route.ts:53","message":"After Jina fetch","data":{"markdownLength":14686},"runId":"pre-fix","hypothesisId":"H4"}
+{"id":"log_1770724375947_gemini_before","timestamp":1770724375947,"location":"lib/gemini.ts:12","message":"Before generateObject","data":{"markdownLength":14686},"runId":"pre-fix","hypothesisId":"H5"}
+{"id":"log_1770724380687_gemini_after","timestamp":1770724380687,"location":"lib/gemini.ts:27","message":"After generateObject","data":{},"runId":"pre-fix","hypothesisId":"H5"}
