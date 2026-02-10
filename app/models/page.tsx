@@ -31,7 +31,15 @@ export default async function ModelsPage() {
             >
               <span>{model.model_name}</span>
               <span className="text-xs text-slate-500">
-                {new Date(model.created_at).toLocaleString("ru-RU")}
+                {new Date(model.created_at)
+                  .toLocaleString("ru-RU", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                  .replace(",", "")}
               </span>
             </li>
           ))}

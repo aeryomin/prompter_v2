@@ -12,6 +12,7 @@ type ModelSelectorProps = {
 type ModelOption = {
   id: string;
   model_name: string;
+  created_at: string;
 };
 
 export function ModelSelector({ value, onChange }: ModelSelectorProps) {
@@ -60,6 +61,17 @@ export function ModelSelector({ value, onChange }: ModelSelectorProps) {
     onChange?.(event.target.value || "");
   };
 
+  const formatDateTime = (iso: string) =>
+    new Date(iso)
+      .toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .replace(",", "");
+
   return (
     <div className="space-y-2">
       <Label>Модель для генерации промпта</Label>
@@ -74,7 +86,7 @@ export function ModelSelector({ value, onChange }: ModelSelectorProps) {
         <option value="">Выберите модель</option>
         {models.map((model) => (
           <option key={model.id} value={model.id}>
-            {model.model_name}
+            {model.model_name} — {formatDateTime(model.created_at)}
           </option>
         ))}
       </select>
